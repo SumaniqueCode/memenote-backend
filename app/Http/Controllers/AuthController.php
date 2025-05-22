@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 
 use App\Models\PasswordResetToken;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
@@ -28,14 +29,14 @@ class AuthController extends Controller
 
         $user = User::create([
             'name' => $request->name,
-            'display_name' => $request->display_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response(['user' => $user, 'token' => $token], 201);
+        // return response(['user' => $user, 'token' => $token], 201);
+        return response(['user' => $user, ], 200);
     }
 
     public function login(Request $request)
@@ -70,7 +71,7 @@ class AuthController extends Controller
     public function loginStatus(Request $request)
     {
         try {
-            $check_user_authentication = auth()->check();
+            $check_user_authentication = Auth::check();
             if ($check_user_authentication) {
                 return response([
                     'status' => 200,
@@ -90,9 +91,9 @@ class AuthController extends Controller
             // Get bearer token from the request
             $accessToken = $request->bearerToken();
             // Get access token from database
-            $token = PersonalAccessToken::findToken($accessToken);
+            // $token = PersonalAccessToken::findToken($accessToken);
             // Revoke token
-            $token->delete();
+            // $token->delete();
             return response([
                 'status' => 200
             ]);
@@ -104,66 +105,66 @@ class AuthController extends Controller
     }
 
 
-    // forget password api
-    public function forgotPassword(Request $request)
-    {
-        $check_old_token = PasswordResetToken::where('email',$request->email)->get();
-        foreach ($check_old_token as $value) {
-           $value->delete();
-        }
-        $check_user = User::where('email',$request->email)->exists();
-        If($check_user){
-        $user = User::where('email',$request->email)->first();
-            $passwordReset = New PasswordResetToken;
-            $token = Str::random(6);
-            $passwordReset->token = $token;
-            $passwordReset->email =  $request->email; 
-            $passwordReset->save();
+    // // forget password api
+    // public function forgotPassword(Request $request)
+    // {
+    //     $check_old_token = PasswordResetToken::where('email',$request->email)->get();
+    //     foreach ($check_old_token as $value) {
+    //        $value->delete();
+    //     }
+    //     $check_user = User::where('email',$request->email)->exists();
+    //     If($check_user){
+    //     $user = User::where('email',$request->email)->first();
+    //         $passwordReset = New PasswordResetToken;
+    //         $token = Str::random(6);
+    //         $passwordReset->token = $token;
+    //         $passwordReset->email =  $request->email; 
+    //         $passwordReset->save();
 
-            Mail::send("emails.forgotPassword", ['token' => $token,'user'=> $user],
-             function ($message) use ($request){
-                $message->to($request->email);
-                $message->subject("Reset your password");
-                });
-            return response(['message' => 'Check mail for reset token'], 201);
-        }
-        else{
-            return response(['errors' => ['User Does not exist']], 401);
-        }
-    }
+    //         Mail::send("emails.forgotPassword", ['token' => $token,'user'=> $user],
+    //          function ($message) use ($request){
+    //             $message->to($request->email);
+    //             $message->subject("Reset your password");
+    //             });
+    //         return response(['message' => 'Check mail for reset token'], 201);
+    //     }
+    //     else{
+    //         return response(['errors' => ['User Does not exist']], 401);
+    //     }
+    // }
 
-    // check the reset token
-    public function checkResetToken(Request $request)
-    {
-        $user = PasswordResetToken::where('email', $request->email)->first();
-        $token =  $request->token;
-            if ( $token !== $user->token) {
-                return response(['errors' => ['Invalid reset token']], 401);
-            }
-            else{
-            return response(['message' => 'Valid reset token'], 201);
-        }
-    }
-    // change password
-    public function changePassword(Request $request)
-    {
+    // // check the reset token
+    // public function checkResetToken(Request $request)
+    // {
+    //     $user = PasswordResetToken::where('email', $request->email)->first();
+    //     $token =  $request->token;
+    //         if ( $token !== $user->token) {
+    //             return response(['errors' => ['Invalid reset token']], 401);
+    //         }
+    //         else{
+    //         return response(['message' => 'Valid reset token'], 201);
+    //     }
+    // }
+    // // change password
+    // public function changePassword(Request $request)
+    // {
 
-        $validator = Validator::make($request->all(), [
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+    //     $validator = Validator::make($request->all(), [
+    //         'password' => 'required|string|min:8|confirmed',
+    //     ]);
 
-        if ($validator->fails()) {
-            return response(['errors' => $validator->errors()->all()], 422);
-        }
+    //     if ($validator->fails()) {
+    //         return response(['errors' => $validator->errors()->all()], 422);
+    //     }
 
-            $user = User::where('email', $request->email)->first();
-            $user->update([
-                'password' => Hash::make($request->password),
-            ]);
+    //         $user = User::where('email', $request->email)->first();
+    //         $user->update([
+    //             'password' => Hash::make($request->password),
+    //         ]);
 
-            $passwordReset = PasswordResetToken::where('email',$request->email)->first();
-            $passwordReset->delete();
+    //         $passwordReset = PasswordResetToken::where('email',$request->email)->first();
+    //         $passwordReset->delete();
 
-            return response(['message' => 'Password Change Successfully'], 201);
-    }
+    //         return response(['message' => 'Password Change Successfully'], 201);
+    // }
 }
