@@ -65,6 +65,12 @@ class MemeController extends Controller
         }
     }
 
+    public function getAllmemes(){
+        $memes = Meme::where('user_id', Auth::user()->id)->get();
+        return response()-> json(['memes'=>$memes]);
+
+    }
+
     public function getMemeDetails($id)
     {
         $meme = Meme::where('id', $id)->first();
